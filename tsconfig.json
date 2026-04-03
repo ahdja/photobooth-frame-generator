@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "target": "ES6",
+        "module": "CommonJS",
+        "declaration": true, // Menghasilkan file .d.ts (penting untuk package)
+        "outDir": "./dist", // Folder hasil build
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "lib": [
+            "DOM",
+            "ES2015"
+        ] // Agar support Canvas dan DOM API
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photobooth Frame Generator Example</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .form-group { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        h3 { margin-top: 0; }
+        img { max-width: 100%; border: 1px solid #ccc; margin-top: 10px; border-radius: 4px; }
+        button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        #result-container { margin-top: 30px; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>Photobooth Frame Generator Example</h1>
+    <p>A simple demonstration of how the Photobooth Frame Generator detects transparent slots and fills them with photos.</p>
+    
+    <div class="form-group">
+        <h3>1. Select Frame (PNG with transparent slots)</h3>
+        <input type="file" id="frame-input" accept="image/png">
+    </div>
+
+    <div class="form-group">
+        <h3>2. Select Photos (Select multiple files)</h3>
+        <input type="file" id="photos-input" accept="image/*" multiple>
+        <p><small>The order of selection determines which photo goes into which detected slot (top-left to bottom-right).</small></p>
+    </div>
+
+    <div class="form-group">
+        <h3>3. Configurations</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <label for="alpha-threshold">Alpha Threshold (0-255):</label><br>
+                <input type="number" id="alpha-threshold" value="10" min="0" max="255" style="width: 100%; box-sizing: border-box;">
+            </div>
+            <div>
+                <label for="min-slot-size">Min Slot Size (px):</label><br>
+                <input type="number" id="min-slot-size" value="50" min="1" max="1000" style="width: 100%; box-sizing: border-box;">
+            </div>
+            <div>
+                <label for="output-format">Output Format:</label><br>
+                <select id="output-format" style="width: 100%; padding: 3px; box-sizing: border-box;">
+                    <option value="image/png">PNG</option>
+                    <option value="image/jpeg" selected>JPEG</option>
+                    <option value="image/webp">WEBP</option>
+                </select>
+            </div>
+            <div>
+                <label for="quality">Quality (0.0-1.0):</label><br>
+                <input type="number" id="quality" value="0.95" min="0.1" max="1.0" step="0.05" style="width: 100%; box-sizing: border-box;">
+            </div>
+            <div>
+                <label for="slot-expansion">Slot Expansion (px):</label><br>
+                <input type="number" id="slot-expansion" value="5" min="0" max="50" style="width: 100%; box-sizing: border-box;">
+            </div>
+            <div style="display: flex; align-items: flex-end; padding-bottom: 3px;">
+                <label style="cursor: pointer;">
+                    <input type="checkbox" id="fill-empty" checked>
+                    Fill Empty Slots Auto
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <button id="generate-btn">Generate Result</button>
+
+    <div id="result-container">
+        <!-- Rendered image will appear here -->
+    </div>
+
+    <script type="module" src="./main.ts"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+{
+  "name": "photobooth-frame-generator",
+  "version": "1.0.0",
+  "description": "A fast and efficient engine to automate placing user photos into a frame's transparent slots.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "photobooth",
+    "canvas",
+    "image-processing",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "jsdom": "^29.0.1",
+    "tslib": "^2.8.1",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  }
+}
