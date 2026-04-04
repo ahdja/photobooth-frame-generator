@@ -3,6 +3,7 @@
         "target": "ES6",
         "module": "CommonJS",
         "declaration": true, // Menghasilkan file .d.ts (penting untuk package)
+        "rootDir": "./src", // Menyelesaikan masalah error TS5011 saat npm publish
         "outDir": "./dist", // Folder hasil build
         "strict": true,
         "esModuleInterop": true,

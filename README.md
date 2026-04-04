@@ -12,7 +12,7 @@ A fast and efficient TypeScript engine to automate placing user photos into a te
 ## Installation
 
 ```sh
-npm install
+npm install @kotaksurat/photobooth-frame-generator
 ```
 
 ## Basic Usage

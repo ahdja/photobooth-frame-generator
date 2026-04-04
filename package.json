@@ -1,6 +1,10 @@
 {
-  "name": "photobooth-frame-generator",
+  "name": "@kotaksurat/photobooth-frame-generator",
   "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ahdja/photobooth-frame-generator"
+  },
   "description": "A fast and efficient engine to automate placing user photos into a frame's transparent slots.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -24,7 +28,7 @@
     "image-processing",
     "typescript"
   ],
-  "author": "",
+  "author": "Arief Hidayat Djauhar",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
