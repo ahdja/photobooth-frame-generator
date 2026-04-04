@@ -98,6 +98,91 @@ export class PhotoboothFrameGenerator {
         });
     }
 
+    private convexHull(pts: {x: number, y: number}[]): {x: number, y: number}[] {
+        pts.sort((a, b) => a.x === b.x ? a.y - b.y : a.x - b.x);
+        const cross = (o: {x: number, y: number}, a: {x: number, y: number}, b: {x: number, y: number}) => 
+            (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+        const lower: {x: number, y: number}[] = [];
+        for (let p of pts) {
+            while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+            lower.push(p);
+        }
+        const upper: {x: number, y: number}[] = [];
+        for (let i = pts.length - 1; i >= 0; i--) {
+            let p = pts[i];
+            while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+            upper.push(p);
+        }
+        upper.pop();
+        lower.pop();
+        return lower.concat(upper);
+    }
+
+    private getMinimumBoundingBox(hull: {x: number, y: number}[]): Slot | null {
+        if (hull.length === 0) return null;
+        let minArea = Infinity;
+        let best: Slot | null = null;
+
+        for (let i = 0; i < hull.length; i++) {
+            const p1 = hull[i];
+            const p2 = hull[(i + 1) % hull.length];
+            
+            let edgeTheta = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+            
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+            
+            const cosT = Math.cos(-edgeTheta);
+            const sinT = Math.sin(-edgeTheta);
+            
+            for (let p of hull) {
+                let rx = p.x * cosT - p.y * sinT;
+                let ry = p.x * sinT + p.y * cosT;
+                if (rx < minX) minX = rx;
+                if (rx > maxX) maxX = rx;
+                if (ry < minY) minY = ry;
+                if (ry > maxY) maxY = ry;
+            }
+            
+            const w = maxX - minX;
+            const h = maxY - minY;
+            const area = w * h;
+            
+            if (area < minArea) {
+                minArea = area;
+                const cx_rot = minX + w / 2;
+                const cy_rot = minY + h / 2;
+                const r_cosT = Math.cos(edgeTheta);
+                const r_sinT = Math.sin(edgeTheta);
+                const cx = cx_rot * r_cosT - cy_rot * r_sinT;
+                const cy = cx_rot * r_sinT + cy_rot * r_cosT;
+                
+                best = { cx, cy, width: w, height: h, angle: edgeTheta };
+            }
+        }
+        
+        if (best) {
+            let { cx, cy, width, height, angle } = best;
+            let deg = angle * (180 / Math.PI);
+            deg = ((deg % 180) + 180) % 180; // [0, 180)
+            
+            if (deg > 45 && deg <= 135) {
+                deg -= 90;
+                const temp = width;
+                width = height;
+                height = temp;
+            } else if (deg > 135) {
+                deg -= 180;
+            }
+            
+            best.angle = deg * (Math.PI / 180);
+            best.width = width;
+            best.height = height;
+        }
+        
+        return best;
+    }
+
     private findSlotsBFS(imageData: ImageData): Slot[] {
         const { width, height, data } = imageData;
         const visited = new Uint8Array(width * height);
@@ -107,7 +192,9 @@ export class PhotoboothFrameGenerator {
             if (data[i * 4 + 3] < this.config.alphaThreshold && !visited[i]) {
                 const queue: number[] = [i];
                 visited[i] = 1;
-                let minX = i % width, maxX = minX, minY = Math.floor(i / width), maxY = minY;
+
+                const boundary: {x: number, y: number}[] = [];
+                let minX = i % width, maxX = minX;
 
                 let head = 0;
                 while (head < queue.length) {
@@ -115,30 +202,45 @@ export class PhotoboothFrameGenerator {
                     const cx = curr % width, cy = Math.floor(curr / width);
 
                     const neighbors = [[cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]];
+                    let isBoundary = false;
+
                     for (const [nx, ny] of neighbors) {
                         if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
                             const nIdx = ny * width + nx;
-                            if (!visited[nIdx] && data[nIdx * 4 + 3] < this.config.alphaThreshold) {
-                                visited[nIdx] = 1;
-                                queue.push(nIdx);
-                                if (nx < minX) minX = nx; if (nx > maxX) maxX = nx;
-                                if (ny < minY) minY = ny; if (ny > maxY) maxY = ny;
+                            if (data[nIdx * 4 + 3] < this.config.alphaThreshold) {
+                                if (!visited[nIdx]) {
+                                    visited[nIdx] = 1;
+                                    queue.push(nIdx);
+                                    if (nx < minX) minX = nx; if (nx > maxX) maxX = nx;
+                                }
+                            } else {
+                                isBoundary = true;
                             }
+                        } else {
+                            isBoundary = true;
                         }
                     }
+
+                    if (isBoundary) {
+                        boundary.push({x: cx, y: cy});
+                    }
                 }
+                
                 if (maxX - minX > this.config.minSlotSize) {
-                    slots.push({ x: minX, y: minY, width: maxX - minX, height: maxY - minY });
+                    const hull = this.convexHull(boundary);
+                    const mbb = this.getMinimumBoundingBox(hull);
+                    if (mbb) {
+                        slots.push(mbb);
+                    }
                 }
             }
         }
-        return slots.sort((a, b) => (a.y - b.y) || (a.x - b.x));
+        return slots.sort((a, b) => Math.round(a.cy - b.cy) || Math.round(a.cx - b.cx));
     }
 
     private drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, slot: Slot): void {
         const expansion = this.config.slotExpansion;
-        const targetX = slot.x - expansion;
-        const targetY = slot.y - expansion;
+        
         const targetW = slot.width + (expansion * 2);
         const targetH = slot.height + (expansion * 2);
 
@@ -153,6 +255,11 @@ export class PhotoboothFrameGenerator {
             sw = img.width; sh = img.width / slotRatio;
             sx = 0; sy = (img.height - sh) / 2;
         }
-        ctx.drawImage(img, sx, sy, sw, sh, targetX, targetY, targetW, targetH);
+        
+        ctx.save();
+        ctx.translate(slot.cx, slot.cy);
+        ctx.rotate(slot.angle);
+        ctx.drawImage(img, sx, sy, sw, sh, -targetW / 2, -targetH / 2, targetW, targetH);
+        ctx.restore();
     }
 }

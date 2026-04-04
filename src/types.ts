@@ -1,10 +1,11 @@
 export type ImageSource = string | File; // Bisa Base64, URL, atau File Object
 
 export interface Slot {
-    x: number;
-    y: number;
+    cx: number;
+    cy: number;
     width: number;
     height: number;
+    angle: number;
 }
 
 export interface PhotoboothConfig {
