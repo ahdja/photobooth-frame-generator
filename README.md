@@ -5,6 +5,7 @@ A fast and efficient TypeScript engine to automate placing user photos into a te
 ## Features
 
 - **Dynamic Slot Detection**: Automatically finds empty (transparent) slots in a template frame using Breadth-First Search (BFS).
+- **Slot Coordinate Detection**: Get slot positions without uploading photos — useful for previewing layouts or building custom UIs.
 - **Auto Cover/Crop**: Intelligently fits your photos into the detected slots, preserving the aspect ratio (similar to `object-fit: cover`).
 - **Memory Management**: Includes a `reset()` method to free memory by revoking File object URLs and hinting garbage collection.
 - **Browser Ready**: Uses the HTML5 Canvas API and `ImageData` for fast, client-side processing.
@@ -49,6 +50,39 @@ async function processPhotos(frameFile: File, userPhotos: File[]) {
 }
 ```
 
+## Detect Slots Only
+
+Use `detectSlots()` to get slot coordinates without needing user photos. Useful for previewing slot layouts or building custom photo placement UIs.
+
+```typescript
+import { PhotoboothFrameGenerator } from 'photobooth-frame-generator';
+
+const engine = new PhotoboothFrameGenerator();
+
+const result = await engine.detectSlots(frameImage);
+
+console.log(`Frame: ${result.frameWidth}x${result.frameHeight}`);
+console.log(`Found ${result.slots.length} slot(s):`);
+
+result.slots.forEach((slot, i) => {
+    console.log(`  Slot ${i + 1}: center (${slot.cx.toFixed(1)}, ${slot.cy.toFixed(1)}), ` +
+                `size ${slot.width.toFixed(1)}x${slot.height.toFixed(1)}, ` +
+                `angle ${(slot.angle * 180 / Math.PI).toFixed(1)}°`);
+});
+
+engine.reset();
+```
+
+Each `Slot` contains:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `cx` | `number` | Center X coordinate in pixels |
+| `cy` | `number` | Center Y coordinate in pixels |
+| `width` | `number` | Bounding box width in pixels |
+| `height` | `number` | Bounding box height in pixels |
+| `angle` | `number` | Rotation angle in radians |
+
 ## Configuration
 
 When instantiating `PhotoboothFrameGenerator`, you can pass an optional configuration object:
@@ -65,8 +99,9 @@ When instantiating `PhotoboothFrameGenerator`, you can pass an optional configur
 ## How It Works
 1. **Load Assets:** Internally converts `File` objects to blob URLs to be drawn onto a virtual canvas.
 2. **Scan Alpha:** Performs a BFS scan over the `ImageData` to locate contiguous transparent regions (alpha < `alphaThreshold`).
-3. **Sort Slots:** Sorts detected regions topologically (top-to-bottom, left-to-right).
-4. **Draw Composition:** Draws the user photos onto the base layer positioned in the slots, and places the original frame natively as the top layer.
+3. **Convex Hull & Bounding Box:** Computes the convex hull of each region's boundary, then finds the minimum rotated bounding box for accurate slot positioning.
+4. **Sort Slots:** Sorts detected regions topologically (top-to-bottom, left-to-right).
+5. **Draw Composition:** Draws the user photos onto the base layer positioned in the slots, and places the original frame natively as the top layer.
 
 ## Packages & Dependencies Used
 
@@ -86,9 +121,8 @@ To serve and test the example in your browser, run:
 npx vite dev example
 ```
 1. Open the local link (e.g., `http://localhost:5173/`) in the browser.
-2. Under "Select Frame", upload a `PNG` containing transparent rectangular slots matching your final format.
-3. Under "Select Photos", choose as many images as you need corresponding to the holes on the given frame.
-4. Hit **Generate Result** to fetch the composed canvas snapshot.
+2. **Detect Slots Only**: Upload a frame image and click "Detect Slots" to view slot coordinates in a table.
+3. **Generate with Photos**: Under "Select Frame", upload a `PNG` containing transparent rectangular slots. Under "Select Photos", choose your images. Hit **Generate Result** to fetch the composed canvas snapshot.
 
 ## Running Tests
 

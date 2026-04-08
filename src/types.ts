@@ -23,3 +23,9 @@ export interface RenderResult {
     width: number;
     height: number;
 }
+
+export interface SlotDetectionResult {
+    slots: Slot[];
+    frameWidth: number;
+    frameHeight: number;
+}

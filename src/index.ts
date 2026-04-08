@@ -1,4 +1,4 @@
-import { ImageSource, Slot, PhotoboothConfig, RenderResult } from './types';
+import { ImageSource, Slot, PhotoboothConfig, RenderResult, SlotDetectionResult } from './types';
 
 export class PhotoboothFrameGenerator {
     private config: Required<PhotoboothConfig>;
@@ -61,6 +61,35 @@ export class PhotoboothFrameGenerator {
                 slotsFound: slots.length,
                 width: canvas.width,
                 height: canvas.height
+            };
+        } catch (error) {
+            throw new Error(`PhotoboothFrameGenerator Error: ${error}`);
+        }
+    }
+
+    /**
+     * Mendeteksi slot pada frame tanpa memerlukan foto user.
+     * Mengembalikan koordinat slot yang ditemukan.
+     */
+    public async detectSlots(frameSource: ImageSource): Promise<SlotDetectionResult> {
+        try {
+            const frame = await this.loadImage(frameSource);
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!ctx) throw new Error("Canvas context 2D not found");
+
+            canvas.width = frame.width;
+            canvas.height = frame.height;
+
+            ctx.drawImage(frame, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const slots = this.findSlotsBFS(imageData);
+
+            return {
+                slots,
+                frameWidth: frame.width,
+                frameHeight: frame.height
             };
         } catch (error) {
             throw new Error(`PhotoboothFrameGenerator Error: ${error}`);

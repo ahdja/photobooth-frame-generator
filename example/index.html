@@ -17,7 +17,18 @@
 <body>
     <h1>Photobooth Frame Generator Example</h1>
     <p>A simple demonstration of how the Photobooth Frame Generator detects transparent slots and fills them with photos.</p>
-    
+
+    <div class="form-group">
+        <h3>Detect Slots Only</h3>
+        <p>Select a frame image to detect transparent slot coordinates without requiring user photos.</p>
+        <input type="file" id="detect-frame-input" accept="image/png,image/jpeg">
+        <br><br>
+        <button id="detect-btn">Detect Slots</button>
+        <div id="detect-result" style="margin-top: 15px;"></div>
+    </div>
+
+    <hr style="margin: 30px 0;">
+
     <div class="form-group">
         <h3>1. Select Frame (PNG with transparent slots)</h3>
         <input type="file" id="frame-input" accept="image/png">
