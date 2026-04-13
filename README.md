@@ -50,6 +50,42 @@ async function processPhotos(frameFile: File, userPhotos: File[]) {
 }
 ```
 
+## Fill A Specific Slot
+
+You can target a photo to a specific detected slot with the dedicated `createWithAssignments()` API.
+`slotIndex` is zero-based, so `0` means the first detected slot.
+The third parameter, `fallbackPhotos`, is optional.
+
+```typescript
+import { PhotoboothFrameGenerator } from 'photobooth-frame-generator';
+
+const engine = new PhotoboothFrameGenerator();
+
+const result = await engine.createWithAssignments(
+    frameFile,
+    [{ slotIndex: 2, photo: featuredPhoto }],
+    [backupPhoto1, backupPhoto2]
+);
+```
+
+If you do not want to fill the remaining slots automatically, you can omit the third argument:
+
+```typescript
+const result = await engine.createWithAssignments(
+    frameFile,
+    [{ slotIndex: 2, photo: featuredPhoto }]
+);
+```
+
+Behavior summary:
+
+- Assigned photos always stay on their requested slot.
+- Non-assigned photos still fill the remaining slots from top-to-bottom, left-to-right.
+- `fillEmptySlots` only repeats non-assigned photos, preserving explicit slot assignments.
+- If you only need ordered filling, keep using `create(frameFile, photos)`.
+- If you only assign one slot and do not provide `fallbackPhotos`, the other slots remain empty/transparent.
+- To preserve transparency in empty slots, use `image/png` or `image/webp`. `image/jpeg` does not support transparency.
+
 ## Detect Slots Only
 
 Use `detectSlots()` to get slot coordinates without needing user photos. Useful for previewing slot layouts or building custom photo placement UIs.
