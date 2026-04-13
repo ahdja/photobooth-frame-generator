@@ -82,7 +82,13 @@ describe('PhotoboothFrameGenerator Unit Tests', () => {
 
         expect(() => {
             (engine as any).resolveSlotPhotos(slots, [{ slotIndex: 3, photo: 'photo-a' }], []);
-        }).toThrowError('Invalid slotIndex 3. Expected a value between 0 and 0.');
+        }).toThrowError('Invalid slotIndex 3. Only 1 slot(s) were detected, so the valid range is 0 to 0.');
+    });
+
+    it('melempar error yang jelas jika frame tidak memiliki slot transparan', () => {
+        expect(() => {
+            (engine as any).resolveSlotPhotos([], [{ slotIndex: 0, photo: 'photo-a' }], []);
+        }).toThrowError('Invalid slotIndex 0. No transparent slots were detected in the selected frame.');
     });
     
     // ---

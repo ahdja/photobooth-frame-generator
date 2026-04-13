@@ -6,6 +6,16 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-04-14
+
+### Added
+- Added example page controls for trying explicit slot assignment rendering.
+- Added a test for the no-transparent-slot validation path.
+
+### Changed
+- Improved slot assignment error messages to explain when a frame has no detected slots or when the requested index is out of range.
+- Added example-side validation before rendering assigned slots so invalid slot indices fail fast with clearer feedback.
+
 ## [1.1.0] - 2026-04-14
 
 ### Added
