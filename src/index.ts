@@ -320,7 +320,7 @@ export class PhotoboothFrameGenerator {
         
         for (const assignment of assignments) {
             if (!Number.isInteger(assignment.slotIndex) || assignment.slotIndex < 0 || assignment.slotIndex >= slots.length) {
-                throw new Error(`Invalid slotIndex ${assignment.slotIndex}. Expected a value between 0 and ${Math.max(slots.length - 1, 0)}.`);
+                throw new Error(this.getInvalidSlotIndexMessage(assignment.slotIndex, slots.length));
             }
 
             resolvedPhotos[assignment.slotIndex] = assignment.photo;
@@ -344,5 +344,13 @@ export class PhotoboothFrameGenerator {
         }
 
         return resolvedPhotos;
+    }
+
+    private getInvalidSlotIndexMessage(slotIndex: number, slotCount: number): string {
+        if (slotCount === 0) {
+            return `Invalid slotIndex ${slotIndex}. No transparent slots were detected in the selected frame.`;
+        }
+
+        return `Invalid slotIndex ${slotIndex}. Only ${slotCount} slot(s) were detected, so the valid range is 0 to ${slotCount - 1}.`;
     }
 }

@@ -10,11 +10,22 @@ const minSlotSizeInput = document.getElementById('min-slot-size') as HTMLInputEl
 const outputFormatSelect = document.getElementById('output-format') as HTMLSelectElement;
 const qualityInput = document.getElementById('quality') as HTMLInputElement;
 const fillEmptyInput = document.getElementById('fill-empty') as HTMLInputElement;
+const renderModeSelect = document.getElementById('render-mode') as HTMLSelectElement;
+const assignmentOptions = document.getElementById('assignment-options') as HTMLDivElement;
+const assignedSlotIndexInput = document.getElementById('assigned-slot-index') as HTMLInputElement;
+const useFallbackPhotosInput = document.getElementById('use-fallback-photos') as HTMLInputElement;
 
 // Detect Slots elements
 const detectFrameInput = document.getElementById('detect-frame-input') as HTMLInputElement;
 const detectBtn = document.getElementById('detect-btn') as HTMLButtonElement;
 const detectResult = document.getElementById('detect-result') as HTMLDivElement;
+
+const syncRenderModeUI = () => {
+    assignmentOptions.classList.toggle('hidden', renderModeSelect.value !== 'assigned');
+};
+
+renderModeSelect.addEventListener('change', syncRenderModeUI);
+syncRenderModeUI();
 
 // --- Detect Slots Only ---
 detectBtn.addEventListener('click', async () => {
@@ -80,19 +91,53 @@ generateBtn.addEventListener('click', async () => {
 
     const frameFile = frameInput.files[0];
     const photoFiles = Array.from(photosInput.files);
+    const renderMode = renderModeSelect.value;
 
     try {
         generateBtn.disabled = true;
         generateBtn.textContent = 'Processing...';
 
-        // 1. Process the combination
-        const result = await engine.create(frameFile, photoFiles);
+        let result;
+        let modeDescription = 'Sequential fill';
+
+        if (renderMode === 'assigned') {
+            const slotIndex = parseInt(assignedSlotIndexInput.value, 10);
+
+            if (Number.isNaN(slotIndex) || slotIndex < 0) {
+                throw new Error('Assigned slot index must be a number greater than or equal to 0.');
+            }
+
+            const slotDetection = await engine.detectSlots(frameFile);
+
+            if (slotDetection.slots.length === 0) {
+                throw new Error('No transparent slots were detected in the selected frame.');
+            }
+
+            if (slotIndex >= slotDetection.slots.length) {
+                throw new Error(
+                    `Slot index ${slotIndex} is not available. This frame only has ${slotDetection.slots.length} detected slot(s), so the valid range is 0 to ${slotDetection.slots.length - 1}.`
+                );
+            }
+
+            const assignedPhoto = photoFiles[0];
+            const fallbackPhotos = useFallbackPhotosInput.checked ? photoFiles.slice(1) : [];
+
+            result = await engine.createWithAssignments(
+                frameFile,
+                [{ slotIndex, photo: assignedPhoto }],
+                fallbackPhotos
+            );
+
+            modeDescription = `Assigned mode for slot ${slotIndex}`;
+        } else {
+            result = await engine.create(frameFile, photoFiles);
+        }
         
         // 2. Display Result
         resultContainer.innerHTML = '<h3>Result:</h3>';
         
         const info = document.createElement('p');
-        info.innerHTML = `<strong>Found ${result.slotsFound} slots</strong>. Size: ${result.width}x${result.height}`;
+        info.innerHTML = `<strong>Found ${result.slotsFound} slots</strong>. Size: ${result.width}x${result.height}<br>${modeDescription}`;
         resultContainer.appendChild(info);
 
         const img = document.createElement('img');
