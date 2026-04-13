@@ -1,4 +1,6 @@
-import { ImageSource, Slot, PhotoboothConfig, RenderResult, SlotDetectionResult } from './types';
+import { ImageSource, Slot, SlotPhotoAssignment, PhotoboothConfig, RenderResult, SlotDetectionResult } from './types';
+
+export type { ImageSource, Slot, SlotPhotoAssignment, PhotoboothConfig, RenderResult, SlotDetectionResult } from './types';
 
 export class PhotoboothFrameGenerator {
     private config: Required<PhotoboothConfig>;
@@ -20,6 +22,26 @@ export class PhotoboothFrameGenerator {
      * Mendukung input berupa Base64 string atau File object.
      */
     public async create(frameSource: ImageSource, userPhotos: ImageSource[]): Promise<RenderResult> {
+        return this.render(frameSource, [], userPhotos);
+    }
+
+    /**
+     * Mengisi slot tertentu dengan assignment eksplisit,
+     * sambil tetap mendukung foto fallback untuk slot sisanya.
+     */
+    public async createWithAssignments(
+        frameSource: ImageSource,
+        assignments: SlotPhotoAssignment[],
+        fallbackPhotos: ImageSource[] = []
+    ): Promise<RenderResult> {
+        return this.render(frameSource, assignments, fallbackPhotos);
+    }
+
+    private async render(
+        frameSource: ImageSource,
+        assignments: SlotPhotoAssignment[],
+        fallbackPhotos: ImageSource[]
+    ): Promise<RenderResult> {
         try {
             const frame = await this.loadImage(frameSource);
 
@@ -39,13 +61,10 @@ export class PhotoboothFrameGenerator {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // Gambar foto user (Layer bawah)
-            for (let i = 0; i < slots.length; i++) {
-                let photoSource = userPhotos[i];
+            const slotPhotos = this.resolveSlotPhotos(slots, assignments, fallbackPhotos);
 
-                // Jika fillEmptySlots true dan foto yang disuplai lebih sedikit dari slot
-                if (!photoSource && this.config.fillEmptySlots && userPhotos.length > 0) {
-                    photoSource = userPhotos[i % userPhotos.length];
-                }
+            for (let i = 0; i < slots.length; i++) {
+                const photoSource = slotPhotos[i];
 
                 if (photoSource) {
                     const photo = await this.loadImage(photoSource);
@@ -290,5 +309,40 @@ export class PhotoboothFrameGenerator {
         ctx.rotate(slot.angle);
         ctx.drawImage(img, sx, sy, sw, sh, -targetW / 2, -targetH / 2, targetW, targetH);
         ctx.restore();
+    }
+
+    private resolveSlotPhotos(
+        slots: Slot[],
+        assignments: SlotPhotoAssignment[],
+        fallbackPhotos: ImageSource[]
+    ): Array<ImageSource | undefined> {
+        const resolvedPhotos: Array<ImageSource | undefined> = new Array(slots.length).fill(undefined);
+        
+        for (const assignment of assignments) {
+            if (!Number.isInteger(assignment.slotIndex) || assignment.slotIndex < 0 || assignment.slotIndex >= slots.length) {
+                throw new Error(`Invalid slotIndex ${assignment.slotIndex}. Expected a value between 0 and ${Math.max(slots.length - 1, 0)}.`);
+            }
+
+            resolvedPhotos[assignment.slotIndex] = assignment.photo;
+        }
+
+        let sequentialIndex = 0;
+
+        for (let i = 0; i < resolvedPhotos.length; i++) {
+            if (resolvedPhotos[i]) {
+                continue;
+            }
+
+            if (sequentialIndex < fallbackPhotos.length) {
+                resolvedPhotos[i] = fallbackPhotos[sequentialIndex++];
+                continue;
+            }
+
+            if (this.config.fillEmptySlots && fallbackPhotos.length > 0) {
+                resolvedPhotos[i] = fallbackPhotos[i % fallbackPhotos.length];
+            }
+        }
+
+        return resolvedPhotos;
     }
 }

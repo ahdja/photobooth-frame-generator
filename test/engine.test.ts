@@ -34,6 +34,56 @@ describe('PhotoboothFrameGenerator Unit Tests', () => {
         // Melakukan pemanggilan reset untuk memastikan tidak ada array bounds/crash
         expect(() => engine.reset()).not.toThrowError();
     });
+
+    it('tetap mendukung pengisian foto berdasarkan urutan slot', () => {
+        const slots = [
+            { cx: 0, cy: 0, width: 100, height: 100, angle: 0 },
+            { cx: 0, cy: 0, width: 100, height: 100, angle: 0 },
+            { cx: 0, cy: 0, width: 100, height: 100, angle: 0 }
+        ];
+
+        const result = (engine as any).resolveSlotPhotos(slots, [], ['photo-a', 'photo-b']);
+
+        expect(result).toEqual(['photo-a', 'photo-b', 'photo-a']);
+    });
+
+    it('bisa menempatkan foto ke slot tertentu tanpa mengubah urutan slot lain', () => {
+        const slots = [
+            { cx: 0, cy: 0, width: 100, height: 100, angle: 0 },
+            { cx: 0, cy: 0, width: 100, height: 100, angle: 0 },
+            { cx: 0, cy: 0, width: 100, height: 100, angle: 0 }
+        ];
+
+        const result = (engine as any).resolveSlotPhotos(
+            slots,
+            [{ slotIndex: 2, photo: 'photo-c' }],
+            ['photo-a', 'photo-b']
+        );
+
+        expect(result).toEqual(['photo-a', 'photo-b', 'photo-c']);
+    });
+
+    it('menghormati fillEmptySlots=false saat foto berurutan kurang dari jumlah slot', () => {
+        const customEngine = new PhotoboothFrameGenerator({ fillEmptySlots: false });
+        const slots = [
+            { cx: 0, cy: 0, width: 100, height: 100, angle: 0 },
+            { cx: 0, cy: 0, width: 100, height: 100, angle: 0 }
+        ];
+
+        const result = (customEngine as any).resolveSlotPhotos(slots, [], ['photo-a']);
+
+        expect(result).toEqual(['photo-a', undefined]);
+    });
+
+    it('melempar error jika slotIndex assignment di luar batas', () => {
+        const slots = [
+            { cx: 0, cy: 0, width: 100, height: 100, angle: 0 }
+        ];
+
+        expect(() => {
+            (engine as any).resolveSlotPhotos(slots, [{ slotIndex: 3, photo: 'photo-a' }], []);
+        }).toThrowError('Invalid slotIndex 3. Expected a value between 0 and 0.');
+    });
     
     // ---
     // Catatan: Karena engine sangat bergantung pada Canvas API,

@@ -1,5 +1,10 @@
 export type ImageSource = string | File; // Bisa Base64, URL, atau File Object
 
+export interface SlotPhotoAssignment {
+    slotIndex: number;
+    photo: ImageSource;
+}
+
 export interface Slot {
     cx: number;
     cy: number;
