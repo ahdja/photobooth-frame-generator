@@ -20,6 +20,12 @@ export interface PhotoboothConfig {
     quality?: number;
     fillEmptySlots?: boolean;
     slotExpansion?: number;
+    /**
+     * Dipakai untuk loading image dari URL lintas-origin agar canvas tidak "tainted".
+     * Catatan: host gambar tetap harus mengirim header CORS yang sesuai.
+     * Set ke `null` untuk tidak meng-set properti `img.crossOrigin`.
+     */
+    crossOrigin?: '' | 'anonymous' | 'use-credentials' | null;
 }
 
 export interface RenderResult {

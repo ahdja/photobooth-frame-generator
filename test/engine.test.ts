@@ -97,23 +97,61 @@ describe('PhotoboothFrameGenerator Unit Tests', () => {
     // Implementasi di bawah ini merupakan template skeleton untuk Canvas.
     // ---
     
-    it('akan membutuhkan Canvas API saat memanggil .create()', async () => {
-        // Kita mock Image object 
-        const mockImage = {} as HTMLImageElement;
-        
-        // Kita mock Image constructor global
+    it('meng-set crossOrigin=anonymous (default) untuk URL http(s) agar tidak taint canvas', async () => {
+        const created: any[] = [];
+
         global.Image = class {
+            crossOrigin: string | null | undefined;
             onload: () => void = () => {};
             onerror: () => void = () => {};
-            src: string = '';
-            
+            private _src = '';
+
             constructor() {
-                setTimeout(() => this.onload(), 10);
+                created.push(this);
+            }
+
+            set src(v: string) {
+                this._src = v;
+                setTimeout(() => this.onload(), 0);
+            }
+
+            get src() {
+                return this._src;
             }
         } as any;
-        
-        // Test skeleton yang dipotong (Mocking HTMLCanvasElement tergolong rumit 
-        // dan harus disetel jika Anda menginstal package "canvas")
-        expect(true).toBe(true);
+
+        const img = await (engine as any).loadImage('https://cdn.example.com/frame.png');
+        expect(img).toBe(created[0]);
+        expect(created[0].crossOrigin).toBe('anonymous');
+    });
+
+    it('tidak meng-set crossOrigin bila config crossOrigin=null', async () => {
+        const customEngine = new PhotoboothFrameGenerator({ crossOrigin: null });
+
+        global.Image = class {
+            crossOrigin: string | null | undefined;
+            onload: () => void = () => {};
+            onerror: () => void = () => {};
+            set src(_: string) {
+                setTimeout(() => this.onload(), 0);
+            }
+        } as any;
+
+        const img = await (customEngine as any).loadImage('https://cdn.example.com/photo.jpg');
+        expect((img as any).crossOrigin).toBeUndefined();
+    });
+
+    it('tidak meng-set crossOrigin untuk data: URL', async () => {
+        global.Image = class {
+            crossOrigin: string | null | undefined;
+            onload: () => void = () => {};
+            onerror: () => void = () => {};
+            set src(_: string) {
+                setTimeout(() => this.onload(), 0);
+            }
+        } as any;
+
+        const img = await (engine as any).loadImage('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB');
+        expect((img as any).crossOrigin).toBeUndefined();
     });
 });

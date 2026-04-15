@@ -14,6 +14,7 @@ export class PhotoboothFrameGenerator {
             quality: config?.quality ?? 0.92,
             fillEmptySlots: config?.fillEmptySlots ?? true,
             slotExpansion: config?.slotExpansion ?? 5,
+            crossOrigin: config?.crossOrigin !== undefined ? config.crossOrigin : 'anonymous',
         };
     }
 
@@ -75,8 +76,21 @@ export class PhotoboothFrameGenerator {
             // Gambar frame (Layer atas)
             ctx.drawImage(frame, 0, 0);
 
+            let dataUrl: string;
+            try {
+                dataUrl = canvas.toDataURL(this.config.outputFormat, this.config.quality);
+            } catch (error) {
+                // Biasanya DOMException: Tainted canvases may not be exported (CORS)
+                throw new Error(
+                    `Failed to export canvas (likely CORS/tainted canvas). ` +
+                    `If you pass image URLs, ensure the image host allows CORS (Access-Control-Allow-Origin) ` +
+                    `and keep crossOrigin='anonymous' (default), or use same-origin / File / data URL sources. ` +
+                    `Original error: ${error}`
+                );
+            }
+
             return {
-                dataUrl: canvas.toDataURL(this.config.outputFormat, this.config.quality),
+                dataUrl,
                 slotsFound: slots.length,
                 width: canvas.width,
                 height: canvas.height
@@ -142,6 +156,15 @@ export class PhotoboothFrameGenerator {
 
             img.onload = () => resolve(img);
             img.onerror = () => reject("Failed to load image source");
+
+            // Hindari canvas jadi "tainted" saat mengambil gambar dari URL lintas-origin.
+            // Untuk data/blob URL, crossOrigin tidak relevan.
+            if (!(source instanceof File) && this.config.crossOrigin !== null) {
+                const isDataOrBlobUrl = url.startsWith('data:') || url.startsWith('blob:');
+                if (!isDataOrBlobUrl) {
+                    img.crossOrigin = this.config.crossOrigin;
+                }
+            }
             img.src = url;
         });
     }

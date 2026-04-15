@@ -131,6 +131,13 @@ When instantiating `PhotoboothFrameGenerator`, you can pass an optional configur
 | `quality` | `number` | `0.92` | The image quality from `0.0` to `1.0` (applicable for jpeg/webp formats). |
 | `fillEmptySlots` | `boolean` | `true` | If true, intelligently loops through provided photos to fill any remaining empty frame slots. |
 | `slotExpansion` | `number` | `5` | Expansion in pixels added to each detected slot's edges to cover anti-aliased transparency gaps. |
+| `crossOrigin` | `'' \| 'anonymous' \| 'use-credentials' \| null` | `'anonymous'` | Sets `img.crossOrigin` when loading images from URL strings (helps prevent tainted canvas). Set to `null` to disable. |
+
+## CORS Notes (Remote Image URLs)
+
+If you pass **remote image URLs** (e.g. `https://...`) as `ImageSource`, the browser may block exporting (`canvas.toDataURL`) unless the image host sends proper CORS headers (at minimum `Access-Control-Allow-Origin`).
+
+This package sets `crossOrigin: 'anonymous'` by default to enable CORS-safe loading, but the server must still allow it. If you cannot control the image host, use same-origin URLs, `File` objects, or `data:` URLs instead.
 
 ## How It Works
 1. **Load Assets:** Internally converts `File` objects to blob URLs to be drawn onto a virtual canvas.
