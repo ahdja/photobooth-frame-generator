@@ -6,6 +6,19 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-08
+
+### Added
+- `detectSlotsFromImageData(data, width, height, { alphaThreshold, minSlotSize })`: pure slot detection on RGBA bytes (no canvas, works in Node, workers and tests).
+- `toCatalogSlots(slots, expansion)`: converts raw slots to the vlor catalog format (integer px, angle in degrees clockwise, `radius: 0`, `round: false`). `expansion` is total growth per axis (half per side).
+- Parity tests against fixtures produced by the vlor Go detector (`test/fixtures`).
+
+### Changed
+- Detection now requires the region bbox to reach `minSlotSize` on BOTH sides (was width only, with an off-by-one), so thin strips are no longer reported as slots.
+- Slot order is now row band (`top / max(1, height/20)`) then x, instead of exact rounded `cy` then `cx`, so slots on one visual row stay left to right.
+- Slot width/height now cover the full pixel extent (+1 px; previously measured between pixel centres).
+- `PhotoboothFrameGenerator` uses the same pure function internally; `detectSlots()` still returns raw slots (radians) so rendering is unchanged apart from the points above.
+
 ## [1.1.1] - 2026-04-14
 
 ### Added

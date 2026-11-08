@@ -176,3 +176,15 @@ To execute the entire test suite, make sure you have installed standard modules 
 npm run test
 ```
 This will discover scripts inside the `test/` directory using the `vitest.config.ts` rules, executing assertions efficiently on the JSDOM mock environment.
+
+
+## Pure detection and the vlor catalog format
+
+```ts
+import { detectSlotsFromImageData, toCatalogSlots } from '@kotaksurat/photobooth-frame-generator';
+
+const raw = detectSlotsFromImageData(imageData.data, imageData.width, imageData.height, { alphaThreshold: 20, minSlotSize: 200 });
+const slots = toCatalogSlots(raw, 50); // [{ cx, cy, width, height, angle /* deg, clockwise */, radius: 0, round: false }]
+```
+
+A pixel is a hole when `alpha < alphaThreshold`; a region counts when its bbox is at least `minSlotSize` on both sides. The vlor Go detector (`backend/internal/slots`) produces identical output for the same image (fixtures in `test/fixtures`; tests allow +-1 px / +-0.5 deg but currently match exactly).
