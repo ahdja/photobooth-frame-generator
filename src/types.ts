@@ -40,3 +40,22 @@ export interface SlotDetectionResult {
     frameWidth: number;
     frameHeight: number;
 }
+
+/** Options of the pure detector (detectSlotsFromImageData). */
+export interface DetectOptions {
+    /** A pixel is a hole when alpha < alphaThreshold. Default 10. */
+    alphaThreshold?: number;
+    /** Minimum bbox size (px) on both sides. Default 50. */
+    minSlotSize?: number;
+}
+
+/** Slot in the vlor catalog format (integer px, angle in degrees clockwise). */
+export interface CatalogSlot {
+    cx: number;
+    cy: number;
+    width: number;
+    height: number;
+    angle: number;
+    radius: number;
+    round: boolean;
+}
